@@ -82,6 +82,8 @@ RSpec.describe "DB / Slices", :app_integration do
 
       write "config/providers/db.rb", <<~RUBY
         Hanami.app.configure_provider :db do
+          config.extensions += [:exclude_or_null]
+
           after(:prepare) do
             @rom_config.plugin(:sql, relations: :auto_restrictions)
           end
@@ -95,6 +97,12 @@ RSpec.describe "DB / Slices", :app_integration do
               schema :posts, infer: true
             end
           end
+        end
+      RUBY
+
+      write "slices/main/config/providers/db.rb", <<~RUBY
+        Main::Slice.configure_provider :db do
+          config.extensions = []
         end
       RUBY
 
@@ -161,6 +169,11 @@ RSpec.describe "DB / Slices", :app_integration do
       expect(Main::Slice["relations.posts"]).to be Main::Slice["db.rom"].relations[:posts]
       expect(Main::Slice["db.rom"].relations.elements.keys).not_to include :authors
       expect(Main::Slice["relations.posts"]).not_to be Admin::Slice["relations.posts"]
+
+      # Extensions configured in the app's db provider are copied to child slice providers
+      expect(Admin::Slice["db.connection"].options[:extensions]).to include :exclude_or_null
+      # Unless the child slice provider has configured their own
+      expect(Main::Slice["db.connection"].options[:extensions]).to eq []
 
       # Plugins configured in the app's db provider are copied to child slice providers
       expect(Admin::Slice["db.config"].setup.plugins.length).to eq 1
