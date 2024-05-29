@@ -203,9 +203,16 @@ RSpec.describe "DB / Slices", :app_integration do
         end
       RUBY
 
+      write "config/slices/admin.rb", <<~RUBY
+        module Admin
+          class Slice < Hanami::Slice
+            config.db.configure_from_parent = false
+          end
+        end
+      RUBY
+
       write "slices/admin/config/providers/db.rb", <<~RUBY
         Admin::Slice.configure_provider :db do
-          config.share_parent_config = false
           config.extensions = []
         end
       RUBY

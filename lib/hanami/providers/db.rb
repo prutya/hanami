@@ -19,8 +19,6 @@ module Hanami
 
       setting :relations_path, default: "relations"
 
-      setting :share_parent_config, default: true
-
       # @api private
       def prepare
         prepare_and_import_parent_db and return if import_from_parent?
@@ -119,7 +117,7 @@ module Hanami
       end
 
       def apply_parent_config?
-        config.share_parent_config && parent_db_provider
+        target.config.db.configure_from_parent && parent_db_provider
       end
 
       def parent_db_provider
