@@ -96,9 +96,10 @@ module Hanami
       def apply_parent_provider_config
         return unless apply_parent_config?
 
-        unless config.configured?(:extensions)
-          # TODO: consider applying other settings too
-          config.extensions = parent_db_provider.source.config.extensions
+        self.class.settings.keys.each do |key|
+          next if config.configured?(key)
+
+          config[key] = parent_db_provider.source.config[key]
         end
       end
 

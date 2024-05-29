@@ -100,12 +100,6 @@ RSpec.describe "DB / Slices", :app_integration do
         end
       RUBY
 
-      write "slices/main/config/providers/db.rb", <<~RUBY
-        Main::Slice.configure_provider :db do
-          config.extensions = []
-        end
-      RUBY
-
       write "slices/admin/relations/authors.rb", <<~RUBY
         module Admin
           module Relations
@@ -113,6 +107,12 @@ RSpec.describe "DB / Slices", :app_integration do
               schema :authors, infer: true
             end
           end
+        end
+      RUBY
+
+      write "slices/main/config/providers/db.rb", <<~RUBY
+        Main::Slice.configure_provider :db do
+          config.extensions = []
         end
       RUBY
 
@@ -170,9 +170,9 @@ RSpec.describe "DB / Slices", :app_integration do
       expect(Main::Slice["db.rom"].relations.elements.keys).not_to include :authors
       expect(Main::Slice["relations.posts"]).not_to be Admin::Slice["relations.posts"]
 
-      # Extensions configured in the app's db provider are copied to child slice providers
+      # Config in the app's db provider is copied to child slice providers
       expect(Admin::Slice["db.connection"].options[:extensions]).to include :exclude_or_null
-      # Unless the child slice provider has configured their own
+      # Except when it has been explicitly configured in a child slice provider
       expect(Main::Slice["db.connection"].options[:extensions]).to eq []
 
       # Plugins configured in the app's db provider are copied to child slice providers
@@ -206,6 +206,7 @@ RSpec.describe "DB / Slices", :app_integration do
       write "slices/admin/config/providers/db.rb", <<~RUBY
         Admin::Slice.configure_provider :db do
           config.share_parent_config = false
+          config.extensions = []
         end
       RUBY
 
@@ -214,6 +215,7 @@ RSpec.describe "DB / Slices", :app_integration do
       require "hanami/prepare"
 
       expect(Admin::Slice["db.config"].setup.plugins.length).to eq 0
+      expect(Admin::Slice["db.connection"].options[:extensions]).to eq []
     end
   end
 
